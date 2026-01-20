@@ -1,0 +1,20 @@
+{
+    "name": "postgres-connector",
+    "config": {  
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "tasks.max": "1",
+      "database.hostname": "$DATABASE_IP",
+      "database.port": "$DATABASE_PORT",
+      "database.user": "$DATABASE_USER",
+      "database.password": "$POSTGRES_PASSWORD",
+      "database.server.id": "184054",
+      "database.server.name": "dbserver1",
+      "database.dbname": "$POSTGRES_DB",
+      "table.include.list": "public.events",
+      "transforms": "outbox",
+      "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+      "transforms.outbox.route.topic.replacement": "hems.${routedByValue}",
+      "transforms.outbox.table.fields.additional.placement": "type:envelope:eventType,id:envelope:eventId",
+      "plugin.name": "pgoutput"
+    }
+}

@@ -1,0 +1,265 @@
+# Order of the stages
+stages:
+  - test
+  - build
+  - push
+  - deploy
+
+test:
+  # image: docker/compose:alpine-1.27.4
+  image: docker-registry.inesctec.pt/cpes/european-projects/interconnect/hems/hems-infrastructure/gitlab-ci-base-image:latest
+  stage: test
+
+  # Job only starts if manually triggered from the GitLab UI
+  when: manual
+  
+  tags:
+    - docker
+
+  services:
+  - docker:24.0.2-dind
+
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  
+    DOCKER_DRIVER: overlay2
+    DOCKER_BUILDKIT: 1
+    COMPOSE_DOCKER_CLI_BUILD: 1
+
+    POSTGRES_USER: postgres
+    POSTGRES_DB: account_manager
+
+    # test config
+    DATABASE_IP: postgresql
+    DATABASE_PORT: 5432
+    DATABASE_USER: postgres
+    BOOTSTRAP_SERVERS: kafka:9092
+    GITLAB_CI_TEST: "True"
+
+    ZOOKEEPER_CONNECT: zookeeper:2181
+    CONNECT_IP: connect
+
+    GROUP_ID: "1"
+    CONFIG_STORAGE_TOPIC: my_connect_configs
+    OFFSET_STORAGE_TOPIC: my_connect_offsets
+    STATUS_STORAGE_TOPIC: my_connect_statuses
+
+  before_script:
+    # PREPARE ENVIRONMENT
+    - docker version
+    - docker compose version
+    - docker info
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+
+    - docker compose -f Docker-compose/docker-compose-prod.yml down -v
+    - docker compose -f Docker-compose/docker-compose-prod.yml rm -v
+
+    # - docker network create veth-hems || true  # Allow this command to fail (network veth-hems might already exist)
+
+  script:
+    - tox --version
+
+    # Start zookeeper container
+    - docker compose -f Docker-compose/docker-compose-prod.yml up -d zookeeper
+    - sleep 10
+
+    - export ZOOKEEPER_CONNECT=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' zookeeper):2181
+    - echo $ZOOKEEPER_CONNECT
+
+    # Start Postgres database and remaining kafka stack
+    - docker compose -f Docker-compose/docker-compose-prod.yml up -d postgresql connect kafka
+    - sleep 30
+
+    # Configure services IP's manually from the docker network
+    - export DATABASE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgresql)
+    - export BOOTSTRAP_SERVERS=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' kafka):9092
+    - export CONNECT_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' connect)
+
+    - echo $DATABASE_IP
+    - echo $BOOTSTRAP_SERVERS
+    - echo $CONNECT_IP
+
+    - export PGPASSWORD=$POSTGRES_PASSWORD
+    - |
+      psql -h "$DATABASE_IP" --username "$POSTGRES_USER" -p "5432" -d "$POSTGRES_DB" <<-EOSQL
+        CREATE DATABASE $POSTGRES_DB;
+        CREATE DATABASE jwt_token_management;
+      EOSQL
+
+    # Debug databases status
+    - psql -h "$DATABASE_IP" --username "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 'OK' AS status;"
+    - psql -h "$DATABASE_IP" --username "$POSTGRES_USER" -d "jwt_token_management" -c "SELECT 'OK' AS status;"
+
+
+    # Register the Debezium Postgres Connector
+    - envsubst "`printf '${%s} ' $(sh -c "env|cut -d'=' -f1")`" < Docker-compose/debezium-prod.json > Docker-compose/debezium_env.json # Replace env variables values
+
+    - curl -i -X POST -H "Accept:application/json" -H "Content-Type:application/json" http://$CONNECT_IP:8083/connectors/ --data-binary "@Docker-compose/debezium_env.json"
+    - sleep 3
+    # Get the status of the connector
+    - curl -i -H "Accept:application/json" $CONNECT_IP:8083/connectors/postgres-connector/status
+
+    - docker container ls -a
+    
+    - tox -c tox-gitlab.ini
+
+  after_script:
+    - export DATABASE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgresql)
+    - export PGPASSWORD=$POSTGRES_PASSWORD
+    - |
+      psql -h "$DATABASE_IP" --username "$POSTGRES_USER" -p "5432" -d "$POSTGRES_DB" <<-EOSQL
+        SELECT * FROM users;
+      EOSQL
+    
+    - |
+      psql -h "$DATABASE_IP" --username "$POSTGRES_USER" -p "5432" -d "$POSTGRES_DB" <<-EOSQL
+        SELECT * FROM confirmation_tokens;
+      EOSQL
+
+    - |
+      psql -h "$DATABASE_IP" --username "$POSTGRES_USER" -p "5432" -d "$POSTGRES_DB" <<-EOSQL
+        SELECT * FROM events;
+      EOSQL
+    
+    - |
+      psql -h "$DATABASE_IP" --username "$POSTGRES_USER" -p "5432" -d "$POSTGRES_DB" <<-EOSQL
+        SELECT * FROM processed_events;
+      EOSQL
+
+    - docker compose -f Docker-compose/docker-compose-prod.yml down -v
+    - docker compose -f Docker-compose/docker-compose-prod.yml rm -v
+
+build:
+  image: docker:24.0.2
+  stage: build
+  tags:
+    - docker
+  services:
+    - docker:24.0.2-dind
+  before_script:
+    - docker info # Print out docker version for debugging
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY # Login on the GitLab container registry
+
+  script:
+    # Echo the variables to appear in the logs
+    - echo CI_REGISTRY_IMAGE $CI_REGISTRY_IMAGE
+    - echo CI_COMMIT_REF_SLUG $CI_COMMIT_REF_SLUG
+    - echo CI_COMMIT_SHA $CI_COMMIT_SHA
+    - echo CI_COMMIT_REF_NAME $CI_COMMIT_REF_NAME
+    - echo CI_COMMIT_SHORT_SHA $CI_COMMIT_SHORT_SHA
+
+    # Build docker image
+    # - docker build --network host -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker build --network host
+        --build-arg GITLAB_DEPLOY_USERNAME=$GITLAB_DEPLOY_USERNAME
+        --build-arg GITLAB_DEPLOY_TOKEN=$GITLAB_DEPLOY_TOKEN
+        --build-arg GITLAB_SSA_MANAGER_DEPLOY_TOKEN=$GITLAB_SSA_MANAGER_DEPLOY_TOKEN
+        -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+
+    # Push the image to the registry (GitLab container registry)
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+# Here, the goal is to tag the "master" branch as "latest"
+push-latest:
+  image: docker:24.0.2
+  stage: push
+  tags:
+    - docker
+  services:
+    - docker:24.0.2-dind
+  before_script:
+    - docker info # Print out docker version for debugging
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+  only:
+    # Only "master" should be tagged "latest", not the other git branches
+    - master
+    - main
+  script:
+    # Because we have no guarantee that this job will be picked up by the same runner
+    # that built the image in the previous step, we pull it again locally
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+    # Then we tag it "latest"
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+
+    # Annnd we push it.
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+# Push to staging or other branches
+push-secondary-branches:
+  image: docker:24.0.2
+  stage: push
+  tags:
+    - docker
+  services:
+    - docker:24.0.2-dind
+  before_script:
+    - docker info # Print out docker version for debugging
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+  except:
+    # Only on "staging" branch
+    # - staging
+    - master
+    - main
+  script:
+    # Because we have no guarantee that this job will be picked up by the same runner
+    # that built the image in the previous step, we pull it again locally
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+    # Then we tag it "staging"
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+
+    # Annnd we push it.
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_BRANCH
+
+# Push New tagged version to container registry (when manually tagged)
+push-tag:
+  image: docker:24.0.2
+  stage: push
+  tags:
+    - docker
+  services:
+    - docker:24.0.2-dind
+  rules:
+    - if: $CI_COMMIT_TAG
+  before_script:
+    - docker info # Print out docker version for debugging
+    - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+    - echo $CI_COMMIT_TAG
+  script:
+    # Pull commit tag
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+    # Then we tag it with tag label
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+
+    # And we push it back to the registry.
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+
+mirror-to-github:
+  stage: deploy
+  image: docker
+  tags:
+    - docker
+  variables:
+    GIT_STRATEGY: clone
+  only:
+  - github-mirror
+  script:
+  - apk add --no-cache git
+  - cd $CI_PROJECT_DIR
+  - git checkout github-mirror
+  - LAST_COMMIT_MSG=$(git log --format=%B -n 1)
+  - LAST_COMMIT_NAME=$(git log -1 --pretty=format:'%an')
+  - LAST_COMMIT_EMAIL=$(git log -1 --pretty=format:'%ae')
+  - git clone https://oauth2:${GITHUB_TOKEN}@github.com/INESCTEC/flexihome-account-manager.git
+    github
+  - rm -rf .git
+  - mv github/.git .git
+  - rm -rf github
+  - git add -A
+  - git config user.email "$LAST_COMMIT_EMAIL"
+  - git config user.name "$LAST_COMMIT_NAME"
+  - git commit -m "$LAST_COMMIT_MSG"
+  - git push
+

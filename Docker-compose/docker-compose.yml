@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  postgresql:
+    image: postgres:latest
+    container_name: postgresql
+    restart: unless-stopped
+    # network_mode: host
+    networks:
+      - account_net
+    ports:
+      - "5432:5432"
+    command: ["postgres", "-c", "wal_level=logical"]
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - ./postgresql_start.sh:/docker-entrypoint-initdb.d/init-user-db.sh
+
+  account_manager:
+    image: account-manager:latest
+    build:
+      context: ../
+    container_name: account_manager
+    restart: unless-stopped
+    depends_on:
+      - postgresql
+    # network_mode: host
+    networks:
+      - account_net
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_BROKER_ENDPOINT=kafka:9092
+      - DATABASE_IP=postgresql
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=mysecretpassword
+
+  zookeeper:
+    image: debezium/zookeeper:1.6
+    container_name: zookeeper
+    # network_mode: host
+    networks:
+      - account_net
+    ports:
+      - "2888:2888"
+      - "2181:2181"
+      - "3888:3888"
+    restart: unless-stopped
+
+  kafka:
+    image: debezium/kafka:1.6
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    # network_mode: host
+    networks:
+      - account_net
+    ports:
+      - "9092:9092"
+      # - "29092:29092"
+    restart: unless-stopped
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+
+  connect:
+    image: debezium/connect:1.6
+    container_name: connect
+    depends_on:
+      - kafka
+    # network_mode: host
+    networks:
+      - account_net
+    ports:
+      - "8083:8083"
+    restart: unless-stopped
+    environment:
+      - GROUP_ID=1
+      - CONFIG_STORAGE_TOPIC=my_connect_configs
+      - OFFSET_STORAGE_TOPIC=my_connect_offsets
+      - STATUS_STORAGE_TOPIC=my_connect_statuses
+      - BOOTSTRAP_SERVERS=kafka:9092
+
+networks:
+  account_net:
+    name: account_net
+    driver: bridge

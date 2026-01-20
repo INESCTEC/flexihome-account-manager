@@ -1,0 +1,7 @@
+pytest==7.1.*
+pytest-cov==2.11.*
+pytest-randomly==3.7.*
+Flask-Testing==0.8.*
+jsonschema==3.2.*
+prance==0.21.*
+importlib-metadata==4.11.*

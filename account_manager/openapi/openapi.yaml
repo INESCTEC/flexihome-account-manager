@@ -1,0 +1,2618 @@
+openapi: 3.0.0
+info:
+  contact:
+    email: vasco.m.campos@inesctec.pt
+    name: Vasco Campos
+  description: 'User Account Manager Service OpenAPI definition. This service has
+    the following functions: register, login, change user credentials and update it''s
+    profile settings. Find out more: [User Account Manager Service documentation](https://gitlab.inesctec.pt/cpes/european-projects/interconnect/hems/hems-documentation/-/blob/master/Microservices/User-Account-Manager-Service.adoc)'
+  title: User Account Manager Service
+  version: 1.2.0
+servers:
+- url: https://interconnect-dev.inesctec.pt/api/account
+security:
+- {}
+- Bearer: []
+tags:
+- description: For managing users' passwords
+  name: Password management
+- description: For managing users' sessions
+  name: Session management
+- description: For managing users' accounts
+  name: Account management
+- description: For managing users' information
+  name: User info management
+- description: 4th wall communication
+  name: App - User Communication
+paths:
+  /app/info:
+    description: Info messages to be displayed in the app
+    get:
+      operationId: app_info_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      - explode: true
+        in: query
+        name: system_language
+        required: true
+        schema:
+          enum:
+          - pt-PT
+          - en-GB
+          example: pt-PT
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/InfoMessages'
+                type: array
+          description: List of info messages to show the user
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "404":
+          content:
+            application/json:
+              examples:
+                User Id not found:
+                  value:
+                    error: user with id "userId" not found
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: User id not found
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Info messages to be displayed in the app
+      tags:
+      - App - User Communication
+      x-openapi-router-controller: account_manager.controllers.app__user_communication_controller
+  /app/version:
+    description: Retrieve the current build version of the app
+    get:
+      operationId: app_version_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      - explode: true
+        in: query
+        name: package_name
+        required: true
+        schema:
+          example: com.svsys.svsysapp
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentAppVersion'
+          description: Current version of the app
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "404":
+          content:
+            application/json:
+              examples:
+                User Id not found:
+                  value:
+                    error: user with id "userId" not found
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: User id not found
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Retrieve the current build version of the app
+      tags:
+      - App - User Communication
+      x-openapi-router-controller: account_manager.controllers.app__user_communication_controller
+  /change-password:
+    description: Change password
+    post:
+      operationId: change_password_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: true
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully changed password.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Change password
+      tags:
+      - Password management
+      x-openapi-router-controller: account_manager.controllers.password_management_controller
+  /confirm-account/{token}:
+    description: Endpoint to confirm account by clicking the link sent to the e-mail.
+    get:
+      operationId: confirm_account_token_get
+      parameters:
+      - explode: false
+        in: path
+        name: token
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConfirmationToken'
+        style: simple
+      responses:
+        "200":
+          description: Web page with button to send the POST request to confirm the
+            account.
+        "404":
+          description: Token not found or expired - Web page with status 404.
+      summary: Endpoint to get the webpage with the button to confirm account by clicking
+        the link sent to the e-mail.
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+    post:
+      operationId: confirm_account_token_post
+      parameters:
+      - explode: false
+        in: path
+        name: token
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConfirmationToken'
+        style: simple
+      responses:
+        "200":
+          description: Account confirmed - Web page with status 200.
+        "400":
+          description: Bad request - Web page with status 400.
+        "404":
+          description: Token not found - Web page with status 404.
+      summary: Endpoint to confirm account by clicking the button on the webpage of
+        the link sent to the e-mail.
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+  /forgot-password:
+    description: Request to sent a link to the email
+    post:
+      operationId: forgot_password_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully requested password change.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Forgot password
+      tags:
+      - Password management
+      x-openapi-router-controller: account_manager.controllers.password_management_controller
+  /forgot-password/{token}:
+    description: Change password after clicking the link sent to the user email.
+    get:
+      operationId: forgot_password_token_get
+      parameters:
+      - explode: false
+        in: path
+        name: token
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConfirmationToken'
+        style: simple
+      responses:
+        "200":
+          description: Web page with button to send the POST request to set new password.
+        "404":
+          description: Token not found or expired - Web page with status 404.
+      summary: Endpoint to get the webpage with the form to reset password by clicking
+        the link sent to the e-mail.
+      tags:
+      - Password management
+      x-openapi-router-controller: account_manager.controllers.password_management_controller
+    post:
+      operationId: forgot_password_token_post
+      parameters:
+      - explode: false
+        in: path
+        name: token
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConfirmationToken'
+        style: simple
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordNewPassword'
+        required: true
+      responses:
+        "200":
+          description: Account confirmed - Web page with status 200.
+        "400":
+          description: Bad request - Web page with status 400.
+        "404":
+          description: Token not found or expired - Web page with status 404.
+      summary: Endpoint to set the new password. This endpoint will be used by the
+        webpage to reset the password (get endpoint of this request).
+      tags:
+      - Password management
+      x-openapi-router-controller: account_manager.controllers.password_management_controller
+  /list-dongles:
+    description: Retrieve information about dongles api keys
+    get:
+      operationId: list_dongles_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Dongles'
+                maxItems: 1000
+                type: array
+          description: List of installed dongles
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Get information about dongles from users
+      tags:
+      - User info management
+      x-openapi-router-controller: account_manager.controllers.user_info_management_controller
+  /list-meter-ids:
+    description: Retrieve information about meter ids
+    get:
+      operationId: list_meter_ids_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MeterId'
+                maxItems: 1000
+                type: array
+          description: List of installed meter ids
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Get information about meter ids from users
+      tags:
+      - User info management
+      x-openapi-router-controller: account_manager.controllers.user_info_management_controller
+  /login:
+    description: Login
+    post:
+      operationId: login_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: expo-token
+        required: false
+        schema:
+          $ref: '#/components/schemas/ExpoToken'
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully authenticated. The token is in the Authorization
+            header. You need to include this header is subsequent requests.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Authorization:
+              $ref: '#/components/headers/Authorization'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Login
+      tags:
+      - Session management
+      x-openapi-router-controller: account_manager.controllers.session_management_controller
+  /logout:
+    description: Logout
+    post:
+      operationId: logout_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: true
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      responses:
+        "200":
+          description: User logout
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Logout
+      tags:
+      - Session management
+      x-openapi-router-controller: account_manager.controllers.session_management_controller
+  /meter-to-user:
+    description: Retrieve the user ids that contains the specified meter ids
+    get:
+      operationId: meter_to_user_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      - explode: true
+        in: query
+        name: meter-ids
+        required: true
+        schema:
+          example:
+          - meterId1
+          - meterId2
+          items:
+            $ref: '#/components/schemas/MeterId'
+          minItems: 1
+          type: array
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MeterIdToUserId'
+                minItems: 1
+                type: array
+          description: user ids that corresponds to requested meter ids
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "404":
+          content:
+            application/json:
+              examples:
+                User Id not found:
+                  value:
+                    error: user with id "userId" not found
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: User id not found
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Retrieve the user ids that contains the specified meter ids
+      tags:
+      - User info management
+      x-openapi-router-controller: account_manager.controllers.user_info_management_controller
+  /recover-account:
+    description: Request to sent a recovery link to the email if the user is soft
+      deleted
+    post:
+      operationId: recover_account_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountRecoveryRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully requested recovery link.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Account recovery after soft delete
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+  /recover-account/{token}:
+    description: Recover after clicking the link sent to the user email.
+    get:
+      operationId: recover_account_token_get
+      parameters:
+      - explode: false
+        in: path
+        name: token
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConfirmationToken'
+        style: simple
+      responses:
+        "200":
+          description: Web page with button to send the POST request to set the user
+            as non deleted.
+        "404":
+          description: Token not found or expired - Web page with status 404.
+      summary: Endpoint to get the webpage with the form to recover the account by
+        clicking the link sent to the e-mail.
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+    post:
+      operationId: recover_account_token_post
+      parameters:
+      - explode: false
+        in: path
+        name: token
+        required: true
+        schema:
+          $ref: '#/components/schemas/ConfirmationToken'
+        style: simple
+      responses:
+        "200":
+          description: Account recovered - Web page with status 200.
+        "400":
+          description: Bad request - Web page with status 400.
+        "404":
+          description: Token not found or expired - Web page with status 404.
+      summary: Endpoint to set the user as non deleted. This endpoint will be used
+        by the webpage to recover the account (get endpoint of this request).
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+  /refresh-token:
+    description: Refresh authentication token (needed if the token is about to expire)
+    post:
+      operationId: refresh_token_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: true
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      responses:
+        "200":
+          description: Successfully generated a new token. The new token is in the
+            Authorization header.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Authorization:
+              $ref: '#/components/headers/Authorization'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Refresh authentication token (needed if the token is about to expire)
+      tags:
+      - Session management
+      x-openapi-router-controller: account_manager.controllers.session_management_controller
+  /register:
+    description: Register account.
+    post:
+      operationId: register_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: expo-token
+        required: false
+        schema:
+          $ref: '#/components/schemas/ExpoToken'
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Account created
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Account already exists (409 Conflict)
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Register account.
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+  /register-google:
+    description: Register/Login user with google account
+    post:
+      operationId: register_google_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: true
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      - explode: false
+        in: header
+        name: expo-token
+        required: false
+        schema:
+          $ref: '#/components/schemas/ExpoToken'
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleUserRegisterRequest'
+        required: true
+      responses:
+        "200":
+          description: Successfully authenticated. The token is in the Authorization
+            header. You need to include this header in subsequent requests.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Authorization:
+              $ref: '#/components/headers/Authorization'
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Account created and google login is also made. The token is
+            in the Authorization header.
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+            Authorization:
+              $ref: '#/components/headers/Authorization'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Register/Login user with google account
+      tags:
+      - Session management
+      x-openapi-router-controller: account_manager.controllers.session_management_controller
+  /user:
+    delete:
+      operationId: user_delete
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      - explode: true
+        in: query
+        name: user-id
+        required: true
+        schema:
+          $ref: '#/components/schemas/UserId'
+        style: form
+      - explode: true
+        in: query
+        name: delete_type
+        required: true
+        schema:
+          $ref: '#/components/schemas/DeleteType'
+        style: form
+      responses:
+        "200":
+          description: Successfully deleted user
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "404":
+          content:
+            application/json:
+              examples:
+                User Id not found:
+                  value:
+                    error: user with id "userId" not found
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: User id not found
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Delete user.
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+    description: Retrieve information about users
+    get:
+      operationId: user_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      - explode: true
+        in: query
+        name: user-ids
+        required: true
+        schema:
+          example:
+          - userId1
+          - userId2
+          items:
+            $ref: '#/components/schemas/UserId'
+          minItems: 1
+          type: array
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/User'
+                type: array
+          description: Users info
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "404":
+          content:
+            application/json:
+              examples:
+                User Id not found:
+                  value:
+                    error: user with id "userId" not found
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: User id not found
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Retrieve information about users
+      tags:
+      - User info management
+      x-openapi-router-controller: account_manager.controllers.user_info_management_controller
+    post:
+      operationId: user_post
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSettingsRequestBody'
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Saved new user account settings
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Save new user account settings
+      tags:
+      - Account management
+      x-openapi-router-controller: account_manager.controllers.account_management_controller
+  /user-deleted-list:
+    description: Retrieve list of all deleted users
+    get:
+      operationId: user_deleted_list_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeletedUser'
+                type: array
+          description: All deleted users
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Retrieve list of all deleted users
+      tags:
+      - User info management
+      x-openapi-router-controller: account_manager.controllers.user_info_management_controller
+  /user-list:
+    description: Retrieve list of all users ids
+    get:
+      operationId: user_list_get
+      parameters:
+      - explode: false
+        in: header
+        name: X-Correlation-ID
+        required: true
+        schema:
+          $ref: '#/components/schemas/CorrelationId'
+        style: simple
+      - explode: false
+        in: header
+        name: Authorization
+        required: false
+        schema:
+          $ref: '#/components/schemas/Authorization'
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserId'
+                type: array
+          description: All user ids
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "400":
+          content:
+            application/json:
+              examples:
+                Bad format:
+                  value:
+                    error: Invalid specification format
+                Timestamp error:
+                  value:
+                    error: one or more timestamps in the request are invalid
+                Missing X-Correlation-ID header:
+                  value:
+                    error: missing X-Correlation-ID header
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Bad Request
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "401":
+          content:
+            application/json:
+              examples:
+                Unauthenticated:
+                  value:
+                    error: error in authorization token
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Unauthenticated or invalid credentials
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+        "403":
+          content:
+            application/json:
+              examples:
+                Forbidden:
+                  value:
+                    error: you are not authorized to access this information
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Forbidden to access the information requested
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+      summary: Retrieve list of all users ids
+      tags:
+      - User info management
+      x-openapi-router-controller: account_manager.controllers.user_info_management_controller
+components:
+  headers:
+    CorrelationId:
+      explode: false
+      required: true
+      schema:
+        $ref: '#/components/schemas/CorrelationId'
+      style: simple
+    Authorization:
+      explode: false
+      required: true
+      schema:
+        $ref: '#/components/schemas/Authorization'
+      style: simple
+  parameters:
+    CorrelationId:
+      explode: false
+      in: header
+      name: X-Correlation-ID
+      required: true
+      schema:
+        $ref: '#/components/schemas/CorrelationId'
+      style: simple
+    ExpoTokenHeader:
+      explode: false
+      in: header
+      name: expo-token
+      required: false
+      schema:
+        $ref: '#/components/schemas/ExpoToken'
+      style: simple
+    UserId:
+      explode: true
+      in: query
+      name: user-id
+      required: true
+      schema:
+        $ref: '#/components/schemas/UserId'
+      style: form
+    UserIds:
+      explode: true
+      in: query
+      name: user-ids
+      required: true
+      schema:
+        example:
+        - userId1
+        - userId2
+        items:
+          $ref: '#/components/schemas/UserId'
+        minItems: 1
+        type: array
+      style: form
+    MeterIds:
+      explode: true
+      in: query
+      name: meter-ids
+      required: true
+      schema:
+        example:
+        - meterId1
+        - meterId2
+        items:
+          $ref: '#/components/schemas/MeterId'
+        minItems: 1
+        type: array
+      style: form
+    RequiredAuthorization:
+      explode: false
+      in: header
+      name: Authorization
+      required: true
+      schema:
+        $ref: '#/components/schemas/Authorization'
+      style: simple
+    Authorization:
+      explode: false
+      in: header
+      name: Authorization
+      required: false
+      schema:
+        $ref: '#/components/schemas/Authorization'
+      style: simple
+    ConfirmationToken:
+      explode: false
+      in: path
+      name: token
+      required: true
+      schema:
+        $ref: '#/components/schemas/ConfirmationToken'
+      style: simple
+    DeleteType:
+      explode: true
+      in: query
+      name: delete_type
+      required: true
+      schema:
+        $ref: '#/components/schemas/DeleteType'
+      style: form
+    PackageName:
+      explode: true
+      in: query
+      name: package_name
+      required: true
+      schema:
+        example: com.svsys.svsysapp
+        type: string
+      style: form
+    SystemLanguage:
+      explode: true
+      in: query
+      name: system_language
+      required: true
+      schema:
+        enum:
+        - pt-PT
+        - en-GB
+        example: pt-PT
+        type: string
+      style: form
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          examples:
+            Bad format:
+              value:
+                error: Invalid specification format
+            Timestamp error:
+              value:
+                error: one or more timestamps in the request are invalid
+            Missing X-Correlation-ID header:
+              value:
+                error: missing X-Correlation-ID header
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Bad Request
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+    InvalidCredentials:
+      content:
+        application/json:
+          examples:
+            Unauthenticated:
+              value:
+                error: error in authorization token
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Unauthenticated or invalid credentials
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+    Forbidden:
+      content:
+        application/json:
+          examples:
+            Forbidden:
+              value:
+                error: you are not authorized to access this information
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: Forbidden to access the information requested
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+    UserIdNotFound:
+      content:
+        application/json:
+          examples:
+            User Id not found:
+              value:
+                error: user with id "userId" not found
+          schema:
+            $ref: '#/components/schemas/Error'
+      description: User id not found
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+  schemas:
+    CorrelationId:
+      format: uuid
+      type: string
+    UserId:
+      example: userId1
+      maxLength: 10
+      minLength: 10
+      title: user_id
+      type: string
+    ConfirmationToken:
+      maxLength: 64
+      minLength: 64
+      type: string
+    Authorization:
+      format: byte
+      type: string
+    Timestamp:
+      format: date-time
+      title: start_timestamp
+      type: string
+    Name:
+      example: Ana
+      maxLength: 15
+      minLength: 1
+      title: first_name
+      type: string
+    Email:
+      example: myemail@mycompany.com
+      format: email
+      maxLength: 50
+      title: email
+      type: string
+    Password:
+      example: Ja7ha6dUHs7knm
+      format: password
+      maxLength: 30
+      minLength: 6
+      type: string
+    PostalCode:
+      pattern: ^[0-9]{4}-[0-9]{3}$
+      title: postal_code
+      type: string
+    MeterId:
+      title: MeterId
+      type: string
+    Country:
+      enum:
+      - PT
+      example: PT
+      title: Country
+      type: string
+    API_KEY:
+      title: api_key
+      type: string
+    RegisterRequest:
+      description: Model containing the request body of the register request
+      example:
+        country: PT
+        password: Ja7ha6dUHs7knm
+        contracted_power: 6.9 kVA
+        schedule_type: economic
+        last_name: Ana
+        password_repeat: Ja7ha6dUHs7knm
+        postal_code: postal_code
+        first_name: Ana
+        meter_id: meter_id
+        email: myemail@mycompany.com
+        tarif_type: simple
+      properties:
+        first_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        last_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+        password:
+          example: Ja7ha6dUHs7knm
+          format: password
+          maxLength: 30
+          minLength: 6
+          type: string
+        password_repeat:
+          example: Ja7ha6dUHs7knm
+          format: password
+          maxLength: 30
+          minLength: 6
+          type: string
+        meter_id:
+          title: MeterId
+          type: string
+        country:
+          $ref: '#/components/schemas/Country'
+        postal_code:
+          pattern: ^[0-9]{4}-[0-9]{3}$
+          title: postal_code
+          type: string
+        tarif_type:
+          $ref: '#/components/schemas/TarifType'
+        contracted_power:
+          $ref: '#/components/schemas/ContractedPower'
+        schedule_type:
+          $ref: '#/components/schemas/ScheduleType'
+      required:
+      - contracted_power
+      - email
+      - first_name
+      - meter_id
+      - password
+      - password_repeat
+      - postal_code
+      - tarif_type
+      type: object
+    GoogleUserRegisterRequest:
+      description: Request body for a google user
+      example:
+        last_name: Ana
+        first_name: Ana
+        email: myemail@mycompany.com
+      properties:
+        first_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        last_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+      required:
+      - email
+      - first_name
+      type: object
+    LoginRequest:
+      description: Model containing the login request
+      example:
+        password: Ja7ha6dUHs7knm
+        email: myemail@mycompany.com
+      properties:
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+        password:
+          example: Ja7ha6dUHs7knm
+          format: password
+          maxLength: 30
+          minLength: 6
+          type: string
+      required:
+      - email
+      - password
+      type: object
+    ChangePasswordRequest:
+      description: Model containing the change password request
+      example:
+        old_password: Ja7ha6dUHs7knm
+        new_password: Ja7ha6dUHs7knm
+        new_password_repeat: Ja7ha6dUHs7knm
+      properties:
+        old_password:
+          example: Ja7ha6dUHs7knm
+          format: password
+          maxLength: 30
+          minLength: 6
+          type: string
+        new_password:
+          example: Ja7ha6dUHs7knm
+          format: password
+          maxLength: 30
+          minLength: 6
+          type: string
+        new_password_repeat:
+          example: Ja7ha6dUHs7knm
+          format: password
+          maxLength: 30
+          minLength: 6
+          type: string
+      required:
+      - new_password
+      - new_password_repeat
+      - old_password
+      type: object
+    ForgotPasswordRequest:
+      description: Model for the forgot password request body
+      example:
+        email: myemail@mycompany.com
+      properties:
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+      required:
+      - email
+      type: object
+    ForgotPasswordNewPassword:
+      description: Model containing the new password to change after forgetting the
+        old password
+      properties:
+        new_password:
+          $ref: '#/components/schemas/Password'
+        new_password_repeat:
+          $ref: '#/components/schemas/Password'
+      required:
+      - new_password
+      - new_password_repeat
+      type: object
+    AccountRecoveryRequest:
+      description: Model for the account recovery request body
+      example:
+        email: myemail@mycompany.com
+      properties:
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+      required:
+      - email
+      type: object
+    DeleteType:
+      enum:
+      - soft
+      - hard
+      example: soft
+      title: DeleteType
+      type: string
+    ScheduleType:
+      enum:
+      - economic
+      - ecologic
+      example: economic
+      title: ScheduleType
+      type: string
+    TarifType:
+      enum:
+      - simple
+      - bi-hourly
+      - tri-hourly
+      example: simple
+      title: TarifType
+      type: string
+    ContractedPower:
+      enum:
+      - 1.15 kVA
+      - 2.3 kVA
+      - 3.45 kVA
+      - 4.6 kVA
+      - 5.75 kVA
+      - 6.9 kVA
+      - 10.35 kVA
+      - 13.8 kVA
+      - 17.25 kVA
+      - 20.7 kVA
+      - 27.6 kVA
+      - 34.5 kVA
+      - 41.4 kVA
+      - 27.6 kVA
+      - 34.5 kVA
+      - 41.4 kVA
+      example: 6.9 kVA
+      title: ContractedPower
+      type: string
+    DayOfWeek:
+      enum:
+      - sunday
+      - monday
+      - tuesday
+      - wednesday
+      - thursday
+      - friday
+      - saturday
+      example: tuesday
+      type: string
+    PeriodOfDay:
+      example:
+        end_timestamp: 2000-01-23T04:56:07.000+00:00
+        start_timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        start_timestamp:
+          format: date-time
+          title: start_timestamp
+          type: string
+        end_timestamp:
+          format: date-time
+          title: start_timestamp
+          type: string
+      required:
+      - end_timestamp
+      - start_timestamp
+      title: PeriodOfDay
+      type: object
+    NotDisturb:
+      example:
+        sunday:
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        saturday:
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        tuesday:
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        wednesday:
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        thursday:
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        friday:
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        monday:
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+        - end_timestamp: 2000-01-23T04:56:07.000+00:00
+          start_timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        sunday:
+          items:
+            $ref: '#/components/schemas/PeriodOfDay'
+          title: sunday
+          type: array
+        monday:
+          items:
+            $ref: '#/components/schemas/PeriodOfDay'
+          title: monday
+          type: array
+        tuesday:
+          items:
+            $ref: '#/components/schemas/PeriodOfDay'
+          title: tuesday
+          type: array
+        wednesday:
+          items:
+            $ref: '#/components/schemas/PeriodOfDay'
+          title: wednesday
+          type: array
+        thursday:
+          items:
+            $ref: '#/components/schemas/PeriodOfDay'
+          title: thursday
+          type: array
+        friday:
+          items:
+            $ref: '#/components/schemas/PeriodOfDay'
+          title: friday
+          type: array
+        saturday:
+          items:
+            $ref: '#/components/schemas/PeriodOfDay'
+          title: saturday
+          type: array
+      required:
+      - friday
+      - monday
+      - saturday
+      - sunday
+      - thursday
+      - tuesday
+      - wednesday
+      title: NotDisturb
+      type: object
+    Permission:
+      enum:
+      - None
+      - Minimal
+      - Full
+      example: Full
+      title: Permission
+      type: string
+    IsGoogleAccount:
+      example: true
+      title: is_google_account
+      type: boolean
+    ExpoToken:
+      example: I22V7MDFJx
+      title: expo_token
+      type: string
+    WhirlpoolToken:
+      example: token
+      title: wp_token
+      type: string
+    User:
+      description: Settings object
+      example:
+        country: PT
+        is_active: true
+        schedule_type: economic
+        not_disturb:
+          sunday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          saturday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          tuesday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          wednesday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          thursday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          friday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          monday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+        is_google_account: true
+        last_name: Ana
+        wp_token: token
+        modified_timestamp: 2000-01-23T04:56:07.000+00:00
+        contracted_power: 6.9 kVA
+        expo_token: I22V7MDFJx
+        user_id: userId1
+        api_key: api_key
+        permissions: Full
+        global_optimizer: true
+        postal_code: postal_code
+        first_name: Ana
+        meter_id: meter_id
+        email: myemail@mycompany.com
+        tarif_type: simple
+      properties:
+        user_id:
+          example: userId1
+          maxLength: 10
+          minLength: 10
+          title: user_id
+          type: string
+        first_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        last_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+        is_active:
+          title: is_active
+          type: boolean
+        schedule_type:
+          $ref: '#/components/schemas/ScheduleType'
+        meter_id:
+          title: MeterId
+          type: string
+        api_key:
+          title: api_key
+          type: string
+        expo_token:
+          example: I22V7MDFJx
+          title: expo_token
+          type: string
+        wp_token:
+          example: token
+          title: wp_token
+          type: string
+        country:
+          $ref: '#/components/schemas/Country'
+        postal_code:
+          pattern: ^[0-9]{4}-[0-9]{3}$
+          title: postal_code
+          type: string
+        tarif_type:
+          $ref: '#/components/schemas/TarifType'
+        contracted_power:
+          $ref: '#/components/schemas/ContractedPower'
+        not_disturb:
+          $ref: '#/components/schemas/NotDisturb'
+        global_optimizer:
+          title: global_optimizer
+          type: boolean
+        permissions:
+          $ref: '#/components/schemas/Permission'
+        is_google_account:
+          example: true
+          title: is_google_account
+          type: boolean
+        modified_timestamp:
+          format: date-time
+          title: start_timestamp
+          type: string
+      required:
+      - email
+      - first_name
+      - is_active
+      - is_google_account
+      - modified_timestamp
+      - not_disturb
+      - permissions
+      - user_id
+      title: User
+      type: object
+    DeletedUser:
+      description: Settings object
+      example:
+        country: PT
+        is_active: true
+        schedule_type: economic
+        not_disturb:
+          sunday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          saturday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          tuesday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          wednesday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          thursday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          friday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          monday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+        is_google_account: true
+        last_name: Ana
+        wp_token: token
+        modified_timestamp: 2000-01-23T04:56:07.000+00:00
+        contracted_power: 6.9 kVA
+        deleted: true
+        expo_token: I22V7MDFJx
+        user_id: userId1
+        api_key: api_key
+        permissions: Full
+        global_optimizer: true
+        postal_code: postal_code
+        first_name: Ana
+        meter_id: meter_id
+        deleted_timestamp: 2000-01-23T04:56:07.000+00:00
+        email: myemail@mycompany.com
+        tarif_type: simple
+      properties:
+        user_id:
+          example: userId1
+          maxLength: 10
+          minLength: 10
+          title: user_id
+          type: string
+        first_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        last_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+        is_active:
+          title: is_active
+          type: boolean
+        schedule_type:
+          $ref: '#/components/schemas/ScheduleType'
+        meter_id:
+          title: MeterId
+          type: string
+        api_key:
+          title: api_key
+          type: string
+        expo_token:
+          example: I22V7MDFJx
+          title: expo_token
+          type: string
+        wp_token:
+          example: token
+          title: wp_token
+          type: string
+        country:
+          $ref: '#/components/schemas/Country'
+        postal_code:
+          pattern: ^[0-9]{4}-[0-9]{3}$
+          title: postal_code
+          type: string
+        tarif_type:
+          $ref: '#/components/schemas/TarifType'
+        contracted_power:
+          $ref: '#/components/schemas/ContractedPower'
+        not_disturb:
+          $ref: '#/components/schemas/NotDisturb'
+        global_optimizer:
+          title: global_optimizer
+          type: boolean
+        permissions:
+          $ref: '#/components/schemas/Permission'
+        is_google_account:
+          example: true
+          title: is_google_account
+          type: boolean
+        modified_timestamp:
+          format: date-time
+          title: start_timestamp
+          type: string
+        deleted:
+          title: deleted
+          type: boolean
+        deleted_timestamp:
+          format: date-time
+          title: start_timestamp
+          type: string
+      required:
+      - deleted
+      - deleted_timestamp
+      - email
+      - first_name
+      - is_active
+      - is_google_account
+      - modified_timestamp
+      - not_disturb
+      - permissions
+      - user_id
+      title: DeletedUser
+      type: object
+    NewSettingsRequestBody:
+      description: Settings object
+      example:
+        country: PT
+        schedule_type: economic
+        not_disturb:
+          sunday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          saturday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          tuesday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          wednesday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          thursday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          friday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          monday:
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+          - end_timestamp: 2000-01-23T04:56:07.000+00:00
+            start_timestamp: 2000-01-23T04:56:07.000+00:00
+        last_name: Ana
+        wp_token: token
+        contracted_power: 6.9 kVA
+        user_id: userId1
+        global_optimizer: true
+        postal_code: postal_code
+        first_name: Ana
+        meter_id: meter_id
+        email: myemail@mycompany.com
+        tarif_type: simple
+      properties:
+        user_id:
+          example: userId1
+          maxLength: 10
+          minLength: 10
+          title: user_id
+          type: string
+        first_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        last_name:
+          example: Ana
+          maxLength: 15
+          minLength: 1
+          title: first_name
+          type: string
+        email:
+          example: myemail@mycompany.com
+          format: email
+          maxLength: 50
+          title: email
+          type: string
+        schedule_type:
+          $ref: '#/components/schemas/ScheduleType'
+        meter_id:
+          title: MeterId
+          type: string
+        wp_token:
+          example: token
+          title: wp_token
+          type: string
+        country:
+          $ref: '#/components/schemas/Country'
+        postal_code:
+          pattern: ^[0-9]{4}-[0-9]{3}$
+          title: postal_code
+          type: string
+        tarif_type:
+          $ref: '#/components/schemas/TarifType'
+        contracted_power:
+          $ref: '#/components/schemas/ContractedPower'
+        not_disturb:
+          $ref: '#/components/schemas/NotDisturb'
+        global_optimizer:
+          type: boolean
+      required:
+      - email
+      - first_name
+      - user_id
+      type: object
+    MeterIdToUserId:
+      example:
+        user_id: userId1
+        meter_id: meter_id
+      properties:
+        meter_id:
+          title: MeterId
+          type: string
+        user_id:
+          example: userId1
+          maxLength: 10
+          minLength: 10
+          title: user_id
+          type: string
+      required:
+      - meter_id
+      - user_id
+      title: MeterIdToUserId
+      type: object
+    Dongles:
+      example:
+        user_id: userId1
+        api_key: api_key
+      properties:
+        user_id:
+          example: userId1
+          maxLength: 10
+          minLength: 10
+          title: user_id
+          type: string
+        api_key:
+          title: api_key
+          type: string
+      title: Dongles
+      type: object
+    CurrentAppVersion:
+      example:
+        build_version: 1.0.0
+      properties:
+        build_version:
+          example: 1.0.0
+          title: build_version
+          type: string
+      title: CurrentAppVersion
+      type: object
+    InfoMessages:
+      example:
+        icon: cloud-off
+        description: The service is down for maintenance. Therefore, the data used
+          will be profiled according to historical data.
+        title: Smart meter service in maintenance
+      properties:
+        title:
+          example: Smart meter service in maintenance
+          title: title
+          type: string
+        description:
+          example: The service is down for maintenance. Therefore, the data used will
+            be profiled according to historical data.
+          title: description
+          type: string
+        icon:
+          example: cloud-off
+          title: icon
+          type: string
+      title: InfoMessages
+      type: object
+    Error:
+      description: Error model
+      properties:
+        error:
+          title: error
+          type: string
+      required:
+      - error
+      title: Error
+      type: object
+  securitySchemes:
+    Bearer:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
+      x-bearerInfoFunc: account_manager.controllers.security_controller_.info_from_Bearer

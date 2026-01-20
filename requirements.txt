@@ -1,0 +1,46 @@
+# Main -> Requests / Database / Flask
+connexion==2.7.*
+urllib3==1.26.*
+setuptools==56.2.*
+Flask==1.1.*
+waitress==2.0.*
+Flask-SQLAlchemy==2.5.*
+psycopg2-binary==2.9.*
+SQLAlchemy==1.4.*
+
+# Metrics + logs
+prometheus-flask-exporter==0.18.*
+opencensus==0.7.*
+opencensus-ext-ocagent==0.7.*
+opencensus-ext-flask==0.7.*
+opencensus-ext-sqlalchemy==0.1.*
+opencensus-ext-requests==0.7.*
+opencensus-ext-logging==0.1.*
+python-json-logger==2.0.*
+coloredlogs==15.0.*
+
+# Kafka
+kafka-python==2.0.*
+
+# Openapi and validations
+openapi-spec-validator==0.4.*
+jsonschema==3.2.*
+marshmallow==3.16.*
+
+# Others
+PyJWT==2.3.*
+Flask-Bcrypt==0.7.*
+markupsafe==2.0.1
+pgeocode==0.3.*
+python-dateutil==2.8.*
+oauth2client==4.1.*
+google-api-python-client==2.99.*
+
+alembic==1.12.*
+
+
+# hems_auth custom library
+# To get the env vars check gitlab: Settings -> CI/CD -> Variables
+# Check the HEMS group to retrieve the values
+git+https://${GITLAB_DEPLOY_USERNAME}:${GITLAB_DEPLOY_TOKEN}@gitlab.inesctec.pt/cpes/european-projects/interconnect/hems/custom-hems-libraries/hems-auth.git@v2.0.5
+# /home/fredyr4zox/Sync/INESC/Builds/hems-auth
